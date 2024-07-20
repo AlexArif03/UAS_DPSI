@@ -30,6 +30,7 @@ const searchMembers = async (req, res) => {
     });
   } catch (error) {
     console.error("Error during member search:", error);
+    console.log(memberSnapshot.data()); 
     res.status(500).json({ message: 'Internal server error.' });
   }
 };
