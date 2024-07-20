@@ -7,22 +7,33 @@ const getAllMembers = async (req, res) => {
 };
 
 const searchMembers = async (req, res) => {
-  const { query } = req.query;
+  try {
+    const { query } = req.query;
 
-  const searchById = query.match(/^\d+$/);
-  let membersSnapshot;
+    const searchById = query.match(/^\d+$/);
+    let memberData;
 
-  if (searchById) {
-    membersSnapshot = await db.collection('members').doc(query).get();
-    if (!membersSnapshot.exists) return res.status(404).send('Member not found.');
-    const member = { id: membersSnapshot.id, ...membersSnapshot.data() };
-    return res.send(member);
-  } else {
-    membersSnapshot = await db.collection('members').where('name', '==', query).get();
-    const members = membersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.send(members);
+    if (searchById) {
+      const memberSnapshot = await db.collection('members').doc(query).get();
+      if (!memberSnapshot.exists) {
+        return res.status(404).json({ message: 'Member not found.' });
+      } 
+      memberData = { id: memberSnapshot.id, ...memberSnapshot.data() };
+    } else {
+      const membersSnapshot = await db.collection('members').where('name', '==', query).get();
+      memberData = membersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+
+    res.json({
+      message: memberData.length > 1 ? "Members found:" : "Member found:", // Adjust message based on results
+      data: memberData 
+    });
+  } catch (error) {
+    console.error("Error during member search:", error);
+    res.status(500).json({ message: 'Internal server error.' });
   }
 };
+
 
 const addMember = async (req, res) => {
   const { id, name, class: memberClass, birthDate, address } = req.body;
