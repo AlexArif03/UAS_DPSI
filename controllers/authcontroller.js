@@ -18,17 +18,34 @@ const registerLibrarian = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  const users = await db.collection('librarians').where('username', '==', username).get();
-  if (users.empty) return res.status(400).send('User not found.');
+    const users = await db.collection('librarians').where('username', '==', username).get();
+    if (users.empty) {
+      return res.status(404).json({ message: 'User not found.' }); // Use 404 for not found
+    }
 
-  const user = users.docs[0].data();
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) return res.status(400).send('Invalid credentials.');
+    const user = users.docs[0].data();
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ message: 'Invalid credentials.' }); // Use 401 for unauthorized
+    }
 
-  const token = jwt.sign({ id: users.docs[0].id, role: user.role }, JWT_SECRET);
-  res.header('Authorization', token).send('Logged in.');
+    const token = jwt.sign({ id: users.docs[0].id, role: user.role }, JWT_SECRET);
+
+    // Send a structured JSON response with the token
+    res.json({
+      message: 'Logged in successfully.',
+      token: token,
+      userId: users.docs[0].id, // Include user ID if needed on the frontend
+      userRole: user.role  // Include user role if relevant for authorization
+    });
+  } catch (error) {
+    console.error("Error during login:", error, token); // Log errors for debugging
+    res.status(500).json({ message: 'Internal server error.'}); // Use 500 for internal errors
+  }
 };
+
 
 module.exports = { registerLibrarian, login };
