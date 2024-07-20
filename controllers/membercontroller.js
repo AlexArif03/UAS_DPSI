@@ -20,7 +20,7 @@ const searchMembers = async (req, res) => {
       } 
       memberData = { id: memberSnapshot.id, ...memberSnapshot.data() };
     } else {
-      const membersSnapshot = await db.collection('members').where('name', '==', query).get();
+      const membersSnapshot = await db.collection('members').where('id', '==', query).get();
       memberData = membersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
